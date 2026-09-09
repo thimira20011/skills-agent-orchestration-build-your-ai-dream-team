@@ -1,0 +1,52 @@
+{
+  "projects": [
+    {
+      "name": "Contributor Onboarding",
+      "owner": "Mona Patel",
+      "status": "Active",
+      "recentActivity": "Published the refreshed setup guide and scheduled the next office hours.",
+      "priority": "High",
+      "summary": "Make the first contribution path easier to discover and complete."
+    },
+    {
+      "name": "Project Pulse",
+      "owner": "Jordan Lee",
+      "status": "Active",
+      "recentActivity": "Connected the dashboard shell to the shared project data contract.",
+      "priority": "Medium",
+      "summary": "Give contributors a dependable, at-a-glance view of team delivery."
+    },
+    {
+      "name": "API Reliability",
+      "owner": "Sam Rivera",
+      "status": "At Risk",
+      "recentActivity": "Investigating elevated timeout rates in the regional staging environment.",
+      "priority": "Critical",
+      "summary": "Reduce intermittent request failures before the next customer release."
+    },
+    {
+      "name": "Design System Refresh",
+      "owner": "Avery Chen",
+      "status": "Planned",
+      "recentActivity": "Collected component usage feedback from the contributor experience group.",
+      "priority": "Medium",
+      "summary": "Align shared interface patterns so teams can ship consistent experiences."
+    },
+    {
+      "name": "Release Notes Automation",
+      "owner": "Priya Nair",
+      "status": "Complete",
+      "recentActivity": "Merged the final workflow updates and documented the handoff for maintainers.",
+      "priority": "Low",
+      "summary": "Turn merged work into clear release notes with less manual coordination."
+    },
+    {
+      "name": "Accessibility Audit",
+      "owner": "Diego Morales",
+      "status": "In Progress",
+      "recentActivity": "Completed keyboard navigation review for the highest-traffic contributor flows.",
+      "priority": "High",
+      "summary": "Remove barriers from core workflows and keep accessibility visible in delivery."
+    }
+  ]
+}

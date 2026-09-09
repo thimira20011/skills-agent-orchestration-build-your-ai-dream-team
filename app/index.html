@@ -1,0 +1,266 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta
+      name="description"
+      content="A contributor-friendly overview of project status, ownership, activity, and priority."
+    />
+    <title>Project Pulse</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <main class="dashboard">
+      <header class="dashboard-header" aria-labelledby="dashboard-title">
+        <div>
+          <p class="eyebrow">Team workspace</p>
+          <h1 id="dashboard-title">Project Pulse</h1>
+          <p class="dashboard-intro">
+            A clear view of what the team is shipping, who is leading it, and where help is
+            needed next.
+          </p>
+        </div>
+        <p class="dashboard-updated" aria-live="polite">
+          Last refreshed
+          <strong id="last-refreshed">Loading...</strong>
+        </p>
+      </header>
+
+      <section class="summary" aria-labelledby="summary-title">
+        <h2 id="summary-title" class="visually-hidden">Project summary</h2>
+        <div class="summary-grid" id="summary-grid">
+          <article class="summary-card">
+            <span class="summary-value" id="active-count">—</span>
+            <span class="summary-label">Active projects</span>
+          </article>
+          <article class="summary-card">
+            <span class="summary-value" id="risk-count">—</span>
+            <span class="summary-label">Need attention</span>
+          </article>
+          <article class="summary-card">
+            <span class="summary-value" id="planned-count">—</span>
+            <span class="summary-label">Planned next</span>
+          </article>
+          <article class="summary-card">
+            <span class="summary-value" id="total-count">—</span>
+            <span class="summary-label">Total projects</span>
+          </article>
+        </div>
+      </section>
+
+      <section aria-labelledby="projects-title">
+        <div class="section-heading">
+          <div>
+            <h2 id="projects-title">Projects</h2>
+            <p id="project-count">Loading project details...</p>
+          </div>
+        </div>
+        <div id="project-content" class="dashboard-state is-loading" role="status" aria-live="polite">
+          <div>
+            <h3>Loading projects</h3>
+            <p>Gathering the latest project details.</p>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <script>
+      (() => {
+        "use strict";
+
+        const projectContent = document.querySelector("#project-content");
+        const projectCount = document.querySelector("#project-count");
+        const lastRefreshed = document.querySelector("#last-refreshed");
+        const summaryValues = {
+          active: document.querySelector("#active-count"),
+          risk: document.querySelector("#risk-count"),
+          planned: document.querySelector("#planned-count"),
+          total: document.querySelector("#total-count"),
+        };
+        const stateClasses = {
+          loading: "is-loading",
+          empty: "is-empty",
+          error: "is-error",
+        };
+
+        function normalize(value) {
+          return String(value).trim().toLowerCase().replace(/[^a-z0-9]+/g, "-");
+        }
+
+        function setText(element, value) {
+          element.textContent = String(value);
+          return element;
+        }
+
+        function setSummary(projects) {
+          const activeStatuses = new Set(["active", "in-progress"]);
+          const riskStatuses = new Set(["at-risk", "blocked"]);
+          const plannedStatuses = new Set(["planned", "not-started"]);
+
+          summaryValues.active.textContent = projects.filter((project) =>
+            activeStatuses.has(normalize(project.status)),
+          ).length;
+          summaryValues.risk.textContent = projects.filter((project) =>
+            riskStatuses.has(normalize(project.status)),
+          ).length;
+          summaryValues.planned.textContent = projects.filter((project) =>
+            plannedStatuses.has(normalize(project.status)),
+          ).length;
+          summaryValues.total.textContent = projects.length;
+        }
+
+        function createMetaRow(label, value) {
+          const term = document.createElement("dt");
+          const description = document.createElement("dd");
+          setText(term, label);
+          setText(description, value);
+          return [term, description];
+        }
+
+        function createProjectCard(project) {
+          const card = document.createElement("article");
+          card.className = "project-card";
+
+          const cardHeader = document.createElement("header");
+          cardHeader.className = "project-card-header";
+
+          const title = document.createElement("h3");
+          setText(title, project.name);
+
+          const status = document.createElement("span");
+          status.className = "status-badge";
+          status.dataset.status = normalize(project.status);
+          status.setAttribute("aria-label", `Status: ${project.status}`);
+          setText(status, project.status);
+
+          cardHeader.append(title, status);
+
+          const cardBody = document.createElement("div");
+          cardBody.className = "project-card-body";
+
+          const summary = document.createElement("p");
+          summary.className = "project-summary";
+          setText(
+            summary,
+            project.summary || `A ${project.priority.toLowerCase()} priority project owned by ${project.owner}.`,
+          );
+
+          const meta = document.createElement("dl");
+          meta.className = "project-meta";
+          meta.append(...createMetaRow("Owner", project.owner));
+
+          const priorityTerm = document.createElement("dt");
+          const priorityDescription = document.createElement("dd");
+          const priority = document.createElement("span");
+          priority.className = "priority-label";
+          priority.dataset.priority = normalize(project.priority);
+          priority.setAttribute("aria-label", `Priority: ${project.priority}`);
+          setText(priority, project.priority);
+          setText(priorityTerm, "Priority");
+          priorityDescription.append(priority);
+          meta.append(priorityTerm, priorityDescription);
+
+          const activity = document.createElement("p");
+          activity.className = "project-activity";
+          activity.setAttribute("aria-label", `Recent activity: ${project.recentActivity}`);
+          setText(activity, project.recentActivity);
+
+          cardBody.append(summary, meta, activity);
+          card.append(cardHeader, cardBody);
+          return card;
+        }
+
+        function showState(type, title, message, canRetry = false) {
+          projectContent.className = `dashboard-state ${stateClasses[type]}`;
+          projectContent.replaceChildren();
+
+          const stateContent = document.createElement("div");
+          const heading = document.createElement("h3");
+          const description = document.createElement("p");
+          setText(heading, title);
+          setText(description, message);
+          stateContent.append(heading, description);
+
+          if (canRetry) {
+            const retryButton = document.createElement("button");
+            retryButton.type = "button";
+            setText(retryButton, "Try again");
+            retryButton.addEventListener("click", loadProjects);
+            stateContent.append(retryButton);
+          }
+
+          projectContent.append(stateContent);
+        }
+
+        function isProject(value) {
+          const requiredFields = ["name", "owner", "status", "recentActivity", "priority"];
+          return (
+            value !== null &&
+            typeof value === "object" &&
+            requiredFields.every(
+              (field) => typeof value[field] === "string" && value[field].trim().length > 0,
+            )
+          );
+        }
+
+        async function loadProjects() {
+          showState("loading", "Loading projects", "Gathering the latest project details.");
+          projectCount.textContent = "Loading project details...";
+
+          try {
+            const response = await fetch("project-data.json", { cache: "no-store" });
+            if (!response.ok) {
+              throw new Error(`Project data request failed with status ${response.status}.`);
+            }
+
+            const data = await response.json();
+            if (!Array.isArray(data.projects) || !data.projects.every(isProject)) {
+              throw new Error("Project data does not match the expected format.");
+            }
+
+            setSummary(data.projects);
+            lastRefreshed.textContent = new Date().toLocaleTimeString([], {
+              hour: "numeric",
+              minute: "2-digit",
+            });
+
+            if (data.projects.length === 0) {
+              projectCount.textContent = "No projects to display";
+              showState(
+                "empty",
+                "No projects yet",
+                "Project updates will appear here when the team adds the first project.",
+              );
+              return;
+            }
+
+            const cards = data.projects.map(createProjectCard);
+            projectContent.className = "project-grid";
+            projectContent.replaceChildren(...cards);
+            projectContent.setAttribute("aria-live", "polite");
+            projectContent.setAttribute("aria-label", "Project cards");
+            projectCount.textContent = `${data.projects.length} project${data.projects.length === 1 ? "" : "s"} in view`;
+          } catch (error) {
+            summaryValues.active.textContent = "—";
+            summaryValues.risk.textContent = "—";
+            summaryValues.planned.textContent = "—";
+            summaryValues.total.textContent = "—";
+            projectCount.textContent = "Project data unavailable";
+            lastRefreshed.textContent = "Unavailable";
+            showState(
+              "error",
+              "We couldn't load projects",
+              error instanceof Error
+                ? `${error.message} Check the local server and try again.`
+                : "The project data could not be loaded. Check the local server and try again.",
+              true,
+            );
+          }
+        }
+
+        loadProjects();
+      })();
+    </script>
+  </body>
+</html>
